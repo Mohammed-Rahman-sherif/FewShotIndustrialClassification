@@ -2,7 +2,7 @@
 
 # ------ root_path/dataset_name ------
 # Put the ABSOLUTE path to your "classification samples/test" folder here
-root_path: 'C:\Users\smart\Documents\Scanflow\FewShot\data'
+root_path: '..\..\data'
 
 # ------ Load Cache and Features ------
 # Keep False for the first run to generate features
