@@ -1,0 +1,28 @@
+# configs/custom_dataset.yaml
+
+# ------ root_path/dataset_name ------
+# Put the ABSOLUTE path to your "classification samples/test" folder here
+root_path: 'C:\Users\smart\Documents\Scanflow\FewShot\data'
+
+# ------ Load Cache and Features ------
+# Keep False for the first run to generate features
+load_cache: False
+load_pre_feat: False
+
+# ------ Hyperparamters ------
+search_hp: True
+
+search_scale: [7, 3]
+search_step: [200, 20]
+
+init_beta: 1
+init_alpha: 1.17
+
+# ------ Basic Config ------
+dataset: 'custom_dataset'  # Matches the key in datasets/__init__.py
+shots: 16                  # How many images per class to use for training
+backbone: 'ViT-L/14'           # ResNet50 (or ViT-B/32, etc.)
+
+lr: 0.001
+augment_epoch: 10
+train_epoch: 100
