@@ -2,6 +2,7 @@ import os
 import random
 import argparse
 import yaml
+import time
 from tqdm import tqdm
 
 import torch
@@ -28,6 +29,7 @@ def get_arguments():
 def run_tip_adapter(cfg, cache_keys, cache_values, val_features, val_labels, test_features, test_labels, clip_weights):
 
     print("\n-------- Searching hyperparameters on the val set. --------")
+    cache_values = cache_values.float()
 
     # Zero-shot CLIP
     clip_logits = 100. * val_features @ clip_weights
@@ -67,9 +69,14 @@ def run_tip_adapter(cfg, cache_keys, cache_values, val_features, val_labels, tes
 
 def run_tip_adapter_F(cfg, cache_keys, cache_values, val_features, val_labels, test_features, test_labels, clip_weights, clip_model, train_loader_F):
 
+    cache_values = cache_values.float()
     # Enable the cached keys to be learnable
+    # adapter = nn.Linear(cache_keys.shape[0], cache_keys.shape[1], bias=False).to(
+    #     clip_model.dtype).cuda()
+
+    model_dtype = next(clip_model.parameters()).dtype
     adapter = nn.Linear(cache_keys.shape[0], cache_keys.shape[1], bias=False).to(
-        clip_model.dtype).cuda()
+        model_dtype).cuda()
     adapter.weight = nn.Parameter(cache_keys.t())
 
     optimizer = torch.optim.AdamW(adapter.parameters(), lr=cfg['lr'], eps=1e-4)
@@ -117,13 +124,20 @@ def run_tip_adapter_F(cfg, cache_keys, cache_values, val_features, val_labels, t
         # Eval
         adapter.eval()
 
+        start_time = time.time()
+
         affinity = adapter(test_features)
         cache_logits = ((-1) * (beta - beta * affinity)).exp() @ cache_values
         clip_logits = 100. * test_features @ clip_weights
         tip_logits = clip_logits + cache_logits * alpha
         acc = cls_acc(tip_logits, test_labels)
 
-        print("**** Tip-Adapter-F's test accuracy: {:.2f}. ****\n".format(acc))
+        end_time = time.time()
+        inference_time = end_time - start_time
+
+        print("**** Tip-Adapter-F's test accuracy: {:.2f}. ****".format(acc))
+        print(f"**** Inference time: {inference_time:.4f} seconds. ****\n")
+
         if acc > best_acc:
             best_acc = acc
             best_epoch = train_idx
